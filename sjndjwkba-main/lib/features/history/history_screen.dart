@@ -12,7 +12,6 @@ import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_ui.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/metric_tile.dart';
-import '../../shared/widgets/section_heading.dart';
 import 'response_metrics.dart';
 
 enum _HistoryFilter { all, open, cleared }
@@ -50,9 +49,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (!mounted) return;
       setState(() { _items..clear()..addAll(page); _hasMore = page.length >= _pageSize; _error = null; _loading = false; });
     } catch (e) {
-      if (!mounted) return;
-      if (_items.isEmpty) setState(() { _error = e; _loading = false; });
-      else showAppToast(context, errorText(e));
+      if (!mounted) {
+        return;
+      }
+      if (_items.isEmpty) {
+        setState(() { _error = e; _loading = false; });
+      } else {
+        showAppToast(context, errorText(e));
+      }
     }
   }
 

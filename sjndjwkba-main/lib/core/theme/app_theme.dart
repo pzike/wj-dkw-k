@@ -138,7 +138,7 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      choiceChipTheme: ChoiceChipThemeData(
+      chipTheme: ChipThemeData(
         backgroundColor: mode.surfaceContainerHighest.withAlpha(170),
         selectedColor: mode.primary,
         side: BorderSide(color: mode.outline.withAlpha(120)),
