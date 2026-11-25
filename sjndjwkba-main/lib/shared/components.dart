@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/status_colors.dart';
+import 'widgets/app_card.dart';
 
 class StatusPill extends StatelessWidget {
   const StatusPill({super.key, required this.label, required this.color});
@@ -44,61 +45,53 @@ class AlertBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = context.status.forStage(stage);
-    final fgColor = StatusColors.on(bgColor);
+    final color = context.status.forStage(stage);
+    final scheme = context.colors;
+    final text = Theme.of(context).textTheme;
 
-    return Material(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onOpen,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded, color: fgColor, size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: fgColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    countdownText,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: fgColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  FilledButton(
-                    onPressed: onOpen,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: fgColor,
-                      foregroundColor: bgColor,
-                      minimumSize: const Size(0, 40),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                    child: const Text('Open alert'),
-                  ),
-                ],
-              ),
-            ],
+    return AppCard(
+      accent: color,
+      onTap: onOpen,
+      semanticLabel: '$title. $countdownText. Open alert details.',
+      padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: color.withAlpha(25),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withAlpha(90)),
+            ),
+            child: Icon(Icons.warning_amber_rounded, color: color, size: 22),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: text.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  countdownText,
+                  style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'View details',
+                  style: text.labelLarge?.copyWith(color: scheme.primary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+        ],
       ),
     );
   }
@@ -287,20 +280,17 @@ class StaleDataBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = context.status.stale;
-    final fgColor = StatusColors.on(bgColor);
+    final color = context.status.stale;
+    final scheme = context.colors;
+    final text = Theme.of(context).textTheme;
 
-    return Container(
-      width: double.infinity,
+    return AppCard(
+      accent: color,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.sensors_off_rounded, color: fgColor, size: 22),
+          Icon(Icons.sensors_off_rounded, color: color, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -308,17 +298,12 @@ class StaleDataBanner extends StatelessWidget {
               children: [
                 Text(
                   'No recent data. This is not an all-clear.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: fgColor,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Last seen: $lastSeenText',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: fgColor),
+                  lastSeenText,
+                  style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
               ],
             ),

@@ -18,7 +18,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/time_format.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_ui.dart';
-import '../../shared/widgets/section_heading.dart';
 import '../../shared/widgets/sheet_helper.dart';
 import '../privacy/privacy_screens.dart';
 
@@ -196,8 +195,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: ListView(
                   padding: const EdgeInsets.fromLTRB(18, 20, 18, 32),
                   children: [
-                    const SectionHeading(eyebrow: 'Account', title: 'Profile'),
-                    const SizedBox(height: 14),
                     _AccountCard(user: user),
                     if (widget.notifications != null) ...[
                       const SizedBox(height: 14),
@@ -226,7 +223,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 20),
                     OutlinedButton.icon(
                       onPressed: _signingOut ? null : _signOut,
-                      style: bigOutlinedStyle(),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(54),
+                        foregroundColor: scheme.error,
+                        side: BorderSide(color: scheme.error.withAlpha(170)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                       icon: _signingOut
                           ? const ButtonSpinner(onFilled: false)
                           : const Icon(Icons.logout_rounded),
@@ -273,6 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.notifications_active_outlined),
             value: s.pushEnabled,
             onChanged: (v) => _change(s.copyWith(pushEnabled: v)),
             title: const Text('Push alerts'),
@@ -280,6 +285,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.volume_up_outlined),
             value: s.alertSound,
             onChanged: (v) => _change(s.copyWith(alertSound: v)),
             title: const Text('Alert sound'),
@@ -288,6 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (role.receivesSmsFallback)
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.sms_outlined),
               value: s.smsFallback,
               onChanged: (v) => _change(s.copyWith(smsFallback: v)),
               title: const Text('SMS fallback'),
@@ -394,6 +401,25 @@ class _AccountCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = context.colors;
     final text = Theme.of(context).textTheme;
+    final details = <Widget>[
+      if (user.phone != null)
+        _AccountDetailRow(
+          icon: Icons.phone_outlined,
+          label: 'Phone',
+          value: user.phone!,
+        ),
+      _AccountDetailRow(
+        icon: Icons.verified_user_outlined,
+        label: 'Role',
+        value: user.role.plainLabel,
+      ),
+      if (user.serviceSpans.isNotEmpty)
+        _AccountDetailRow(
+          icon: Icons.calendar_month_outlined,
+          label: 'In service since',
+          value: formatDate(user.serviceSpans.last.start),
+        ),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -475,20 +501,76 @@ class _AccountCard extends StatelessWidget {
         AppCard(
           title: 'Account information',
           subtitle: 'Your registered account details',
-          child: Column(
-            children: [
-              if (user.phone != null)
-                InfoRow(label: 'Phone', value: user.phone!),
-              InfoRow(label: 'Role', value: user.role.plainLabel),
-              if (user.serviceSpans.isNotEmpty)
-                InfoRow(
-                  label: 'In service since',
-                  value: formatDate(user.serviceSpans.last.start),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+          child: Column(children: [
+            for (var index = 0; index < details.length; index++) ...[
+              if (index > 0)
+                Padding(
+                  padding: const EdgeInsets.only(left: 48),
+                  child: Divider(
+                    height: 1,
+                    color: scheme.outlineVariant.withAlpha(125),
+                  ),
                 ),
+              details[index],
             ],
-          ),
+          ]),
         ),
       ],
+    );
+  }
+}
+
+class _AccountDetailRow extends StatelessWidget {
+  const _AccountDetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    final text = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 11),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: scheme.primary.withAlpha(20),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(icon, size: 19, color: scheme.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: text.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

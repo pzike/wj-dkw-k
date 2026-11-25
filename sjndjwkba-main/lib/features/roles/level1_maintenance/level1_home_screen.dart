@@ -24,7 +24,6 @@ import '../../../shared/widgets/metric_tile.dart';
 import '../../../shared/widgets/section_heading.dart';
 import '../../../shared/widgets/sheet_helper.dart';
 import '../../../shared/widgets/top_chrome.dart';
-import '../../../shared/widgets/drainage_system_panel.dart';
 import '../../../shared/widgets/interactive_drainage_view.dart';
 import '../home_controller.dart';
 
@@ -123,13 +122,8 @@ class Level1HomeScreen extends StatelessWidget {
         // the reference layout's scan order: alert, metrics, visualization.
         _buildMetrics(context),
         const SizedBox(height: 14),
-        DrainageSystemPanel(
-          waterPercent: controller.node?.waterLevelPercent,
-          stage: controller.node?.waterStage ?? 0,
-          isStale: controller.isStale,
-        ),
-        const SizedBox(height: 14),
         InteractiveDrainageView(
+          nodeId: controller.node?.nodeId ?? controller.nodeId,
           waterPercent: controller.node?.waterLevelPercent,
           stage: controller.node?.waterStage ?? 0,
           isStale: controller.isStale,
@@ -229,7 +223,7 @@ class Level1HomeScreen extends StatelessWidget {
           : (stage == 0 ? 'Below Stage 1' : 'Stage $stage of 3'),
       child: Opacity(
         opacity: stale ? 0.5 : 1,
-        child: WaterLevelGauge(currentStage: stage),
+        child: WaterLevelGauge(currentStage: stage, isStale: stale),
       ),
     );
   }

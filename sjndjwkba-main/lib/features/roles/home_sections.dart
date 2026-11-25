@@ -21,7 +21,6 @@ import '../../shared/widgets/app_ui.dart';
 import '../../shared/widgets/metric_tile.dart';
 import '../../shared/widgets/sheet_helper.dart';
 import '../../shared/widgets/top_chrome.dart';
-import '../../shared/widgets/drainage_system_panel.dart';
 import '../../shared/widgets/interactive_drainage_view.dart';
 import 'home_controller.dart';
 
@@ -202,13 +201,8 @@ class HomeGaugeCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DrainageSystemPanel(
-          waterPercent: controller.node?.waterLevelPercent,
-          stage: stage,
-          isStale: stale,
-        ),
-        const SizedBox(height: 14),
         InteractiveDrainageView(
+          nodeId: controller.node?.nodeId ?? controller.nodeId,
           waterPercent: controller.node?.waterLevelPercent,
           stage: stage,
           isStale: stale,
@@ -221,7 +215,7 @@ class HomeGaugeCard extends StatelessWidget {
               : (stage == 0 ? 'Below Stage 1' : 'Stage $stage of 3'),
           child: Opacity(
             opacity: stale ? 0.5 : 1,
-            child: WaterLevelGauge(currentStage: stage),
+            child: WaterLevelGauge(currentStage: stage, isStale: stale),
           ),
         ),
       ],

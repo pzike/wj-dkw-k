@@ -11,11 +11,13 @@ import 'app_card.dart';
 class InteractiveDrainageView extends StatefulWidget {
   const InteractiveDrainageView({
     super.key,
+    required this.nodeId,
     required this.waterPercent,
     required this.stage,
     required this.isStale,
   });
 
+  final String nodeId;
   final double? waterPercent;
   final int stage;
   final bool isStale;
@@ -36,8 +38,8 @@ class _InteractiveDrainageViewState extends State<InteractiveDrainageView> {
         : context.status.forStage(widget.stage);
 
     return AppCard(
-      title: 'Interactive 3D cutaway',
-      subtitle: 'Drag to rotate the channel view',
+      title: 'Drainage system',
+      subtitle: 'Node ${widget.nodeId} · drag to rotate',
       trailing: Icon(Icons.view_in_ar_rounded, color: scheme.primary),
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       child: Column(
@@ -49,7 +51,9 @@ class _InteractiveDrainageViewState extends State<InteractiveDrainageView> {
               behavior: HitTestBehavior.opaque,
               onPanUpdate: (details) => setState(() {
                 _yaw += details.delta.dx * 0.009;
-                _pitch = (_pitch - details.delta.dy * 0.006).clamp(-0.12, 0.82).toDouble();
+                _pitch = (_pitch - details.delta.dy * 0.006)
+                    .clamp(-0.12, 0.82)
+                    .toDouble();
               }),
               child: CustomPaint(
                 painter: _Channel3DPainter(
@@ -74,7 +78,7 @@ class _InteractiveDrainageViewState extends State<InteractiveDrainageView> {
                 child: Text(
                   widget.isStale
                       ? 'Last-known level · not a live reading'
-                      : 'Current node level · Stage ${widget.stage}',
+                      : 'Current level · Stage ${widget.stage}',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),

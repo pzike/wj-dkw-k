@@ -96,7 +96,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Incident History'),
-        actions: [IconButton(onPressed: () {}, tooltip: 'Filter', icon: const Icon(Icons.filter_list_rounded))],
+        actions: [
+          IconButton(
+            onPressed: _showFilterPicker,
+            tooltip: 'Choose incident filter',
+            icon: const Icon(Icons.filter_list_rounded),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -169,6 +175,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   String _filterLabel(_HistoryFilter f) => switch (f) { _HistoryFilter.all => 'All', _HistoryFilter.open => 'Open', _HistoryFilter.cleared => 'Cleared' };
+
+  Future<void> _showFilterPicker() async {
+    final selected = await showModalBottomSheet<_HistoryFilter>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: Text(
+                'Filter incidents',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            for (final filter in _HistoryFilter.values)
+              ListTile(
+                title: Text(_filterLabel(filter)),
+                trailing: _filter == filter
+                    ? Icon(Icons.check_rounded, color: sheetContext.colors.primary)
+                    : null,
+                onTap: () => Navigator.of(sheetContext).pop(filter),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null && mounted) setState(() => _filter = selected);
+  }
 }
 
 class _SummaryTile extends StatelessWidget {
