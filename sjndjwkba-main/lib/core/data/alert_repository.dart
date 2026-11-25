@@ -49,7 +49,8 @@ abstract class AlertRepository {
 
   /// Past incidents, newest first. The server scopes the result to the
   /// signed-in role: Level 1 gets only incidents they are credited on,
-  /// Level 2 and 3 get all of them.
+  /// Level 2 and 3 get all incidents, and Admin can review past incidents
+  /// and remarks.
   ///
   /// Pass the last item's time as [before] to load the next page.
   Future<List<DrainageAlert>> fetchHistory({

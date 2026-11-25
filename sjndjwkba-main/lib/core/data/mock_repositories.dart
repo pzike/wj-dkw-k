@@ -416,6 +416,34 @@ class InMemoryUserRepository implements UserRepository {
   Future<List<AppUser>> fetchPending() async => List.of(_pending);
 
   @override
+  Future<AppUser> create({
+    required String name,
+    required String phone,
+    required UserRole role,
+  }) async {
+    final normalizedPhone = phone.trim();
+    if (name.trim().isEmpty || normalizedPhone.isEmpty) {
+      throw const UserException(UserFailure.invalidValue);
+    }
+    if (_active.any((person) => person.phone == normalizedPhone) ||
+        _pending.any((person) => person.phone == normalizedPhone) ||
+        _archived.any((person) => person.phone == normalizedPhone)) {
+      throw const UserException(UserFailure.phoneInUse);
+    }
+
+    final person = AppUser(
+      id: 'u-admin-${DateTime.now().microsecondsSinceEpoch}',
+      name: name.trim(),
+      role: role,
+      status: AccountStatus.active,
+      phone: normalizedPhone,
+      serviceSpans: [ServiceSpan(start: DateTime.now())],
+    );
+    _active.add(person);
+    return person;
+  }
+
+  @override
   Future<AppUser> approve({
     required String userId,
     required UserRole role,

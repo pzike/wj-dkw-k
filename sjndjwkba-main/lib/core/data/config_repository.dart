@@ -43,8 +43,9 @@ abstract class ConfigRepository {
   /// [ConfigFailure.invalidValue].
   Future<SystemConfig> update(SystemConfig config);
 
-  /// Admin only. Master audit log of role changes and escalations,
-  /// newest first. Pass the last item's time as [before] for the next page.
+  /// Admin only. Master audit log of account, configuration, role, and
+  /// escalation activity, newest first. Pass the last item's time as [before]
+  /// for the next page.
   Future<List<TimelineEntry>> fetchAuditLog({
     int limit = 50,
     DateTime? before,

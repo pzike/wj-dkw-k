@@ -30,6 +30,8 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
 
   final List<TimelineEntry> _entries = <TimelineEntry>[];
   Map<String, PersonSummary> _names = <String, PersonSummary>{};
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = false;
@@ -39,6 +41,12 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
   void initState() {
     super.initState();
     _refresh();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -140,6 +148,15 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
 
     final scheme = context.colors;
     final text = Theme.of(context).textTheme;
+    final query = _query.trim().toLowerCase();
+    final visibleEntries = _entries.where((entry) {
+      if (query.isEmpty) return true;
+      final actor =
+          entry.actorId == null ? '' : nameOf(_names, entry.actorId!);
+      return '${entry.label} $actor ${formatDateTime(entry.at)}'
+          .toLowerCase()
+          .contains(query);
+    }).toList(growable: false);
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -150,43 +167,68 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
           const SectionHeading(
             eyebrow: 'System',
             title: 'Audit log',
-            subtitle: 'Newest first.',
+            subtitle: 'A searchable timeline of system activity.',
           ),
           const SizedBox(height: 14),
-          if (_entries.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 24),
-              child: EmptyState(
-                icon: Icons.fact_check_outlined,
-                title: 'Nothing logged yet',
-                message: 'Role changes and escalations will show up here.',
-              ),
-            )
-          else
-            for (final entry in _entries) ...[
-              AppCard(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          AppCard(
+            accent: scheme.primary,
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      entry.label,
-                      style: text.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      entry.actorId == null
-                          ? formatDateTime(entry.at)
-                          : '${nameOf(_names, entry.actorId!)}, '
-                              '${formatDateTime(entry.at)}',
-                      style: text.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                    Icon(Icons.history_rounded, color: scheme.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${_entries.length} events loaded · newest first',
+                        style: text.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _query = value),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    hintText: 'Search loaded events',
+                    suffixIcon: _query.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Clear search',
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _query = '');
+                            },
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (visibleEntries.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 24),
+              child: EmptyState(
+                icon: Icons.fact_check_outlined,
+                title: 'No matching events',
+                message: 'Try another search or load older events.',
+              ),
+            )
+          else
+            for (final entry in visibleEntries) ...[
+              _AuditEventCard(
+                entry: entry,
+                actor: entry.actorId == null
+                    ? null
+                    : nameOf(_names, entry.actorId!),
               ),
               const SizedBox(height: 10),
             ],
@@ -196,8 +238,88 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
               style: bigOutlinedStyle(),
               child: _loadingMore
                   ? const ButtonSpinner(onFilled: false)
-                  : const Text('Load more'),
+                  : const Text('Load older events'),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuditEventCard extends StatelessWidget {
+  const _AuditEventCard({required this.entry, required this.actor});
+
+  final TimelineEntry entry;
+  final String? actor;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    final text = Theme.of(context).textTheme;
+    final label = entry.label.toLowerCase();
+    final icon = label.contains('role') || label.contains('account')
+        ? Icons.manage_accounts_outlined
+        : label.contains('escalat') || label.contains('alert')
+            ? Icons.warning_amber_rounded
+            : label.contains('remark')
+                ? Icons.notes_rounded
+                : Icons.fact_check_outlined;
+    final color = label.contains('critical')
+        ? context.status.stage3
+        : label.contains('role') || label.contains('account')
+            ? scheme.primary
+            : label.contains('escalat') || label.contains('alert')
+                ? context.status.stage2
+                : scheme.secondary;
+
+    return AppCard(
+      accent: color,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: color.withAlpha(24),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withAlpha(70)),
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.label,
+                  style: text.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    if (actor != null)
+                      AppPill(
+                        label: actor!,
+                        icon: Icons.person_outline_rounded,
+                      ),
+                    Text(
+                      formatDateTime(entry.at),
+                      style: text.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

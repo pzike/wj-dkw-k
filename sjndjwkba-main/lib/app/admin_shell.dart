@@ -3,13 +3,14 @@
 // The signed-in area for Admin: bottom tabs Approvals, Directory, Config,
 // Profile. Admin does account and system governance, not field response.
 // The Archived Users Vault opens from the Directory, and the audit log from
-// Config. Put it in AuthGate like this:
+// Config alongside the past response remarks. Put it in AuthGate like this:
 //
 //   adminHomeBuilder: (context) => AdminShell(
 //     session: session,
 //     auth: authRepository,
 //     users: userRepository,
 //     configs: configRepository,
+//     alerts: alertRepository,
 //     onReadFullNotice: openPrivacyNotice,
 //   ),
 
@@ -17,6 +18,7 @@ import 'package:flutter/material.dart';
 
 import '../core/auth/role_guard.dart';
 import '../core/auth/session.dart';
+import '../core/data/alert_repository.dart';
 import '../core/data/auth_repository.dart';
 import '../core/data/config_repository.dart';
 import '../core/data/user_repository.dart';
@@ -32,6 +34,7 @@ class AdminShell extends StatefulWidget {
     required this.auth,
     required this.users,
     required this.configs,
+    required this.alerts,
     this.onReadFullNotice,
   });
 
@@ -39,6 +42,7 @@ class AdminShell extends StatefulWidget {
   final AuthRepository auth;
   final UserRepository users;
   final ConfigRepository configs;
+  final AlertRepository alerts;
   final VoidCallback? onReadFullNotice;
 
   @override
@@ -59,7 +63,11 @@ class _AdminShellState extends State<AdminShell> {
           children: [
             ApprovalsScreen(users: widget.users),
             DirectoryScreen(users: widget.users),
-            ConfigScreen(configs: widget.configs, users: widget.users),
+            ConfigScreen(
+              configs: widget.configs,
+              users: widget.users,
+              alerts: widget.alerts,
+            ),
             ProfileScreen(
               session: widget.session,
               auth: widget.auth,

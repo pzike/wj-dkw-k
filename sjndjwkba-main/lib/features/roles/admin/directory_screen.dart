@@ -90,7 +90,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     final result = await showAppSheet<String>(
       context,
       title: 'Edit person',
-      subtitle: 'Changes apply right away.',
+      subtitle: 'Review and confirm updates before saving.',
       builder: (sheetContext) =>
           _EditForm(users: widget.users, person: person),
     );
@@ -99,6 +99,18 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       context,
       result == 'archived' ? 'Account archived.' : 'Changes saved.',
     );
+    await _load();
+  }
+
+  Future<void> _addPerson() async {
+    final created = await showAppSheet<bool>(
+      context,
+      title: 'Add person',
+      subtitle: 'Create a verified active directory account.',
+      builder: (sheetContext) => _CreatePersonForm(users: widget.users),
+    );
+    if (created != true || !mounted) return;
+    showAppToast(context, 'Person added to the active directory.');
     await _load();
   }
 
@@ -123,6 +135,11 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       appBar: AppBar(
         title: const Text('Directory'),
         actions: [
+          IconButton(
+            tooltip: 'Add person',
+            onPressed: _addPerson,
+            icon: const Icon(Icons.person_add_alt_1_rounded),
+          ),
           IconButton(
             tooltip: 'Archived users',
             onPressed: _openVault,
@@ -262,6 +279,139 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
   }
 }
 
+class _CreatePersonForm extends StatefulWidget {
+  const _CreatePersonForm({required this.users});
+
+  final UserRepository users;
+
+  @override
+  State<_CreatePersonForm> createState() => _CreatePersonFormState();
+}
+
+class _CreatePersonFormState extends State<_CreatePersonForm> {
+  final TextEditingController _name = TextEditingController();
+  final TextEditingController _phone = TextEditingController();
+  UserRole? _role;
+  bool _working = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _phone.dispose();
+    super.dispose();
+  }
+
+  Future<void> _create() async {
+    final name = _name.text.trim();
+    final phone = _phone.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = 'Enter a name.');
+      return;
+    }
+    if (!looksLikePhone(phone)) {
+      setState(() => _error = 'Enter a valid phone number (10 to 13 digits).');
+      return;
+    }
+    final role = _role;
+    if (role == null) {
+      setState(() => _error = "Select the person's role.");
+      return;
+    }
+
+    setState(() {
+      _working = true;
+      _error = null;
+    });
+    try {
+      await widget.users.create(name: name, phone: phone, role: role);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _working = false;
+        _error = errorText(error);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _name,
+          enabled: !_working,
+          textCapitalization: TextCapitalization.words,
+          decoration: appInputDecoration(
+            context,
+            label: 'Full name',
+            icon: Icons.person_outline,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _phone,
+          enabled: !_working,
+          keyboardType: TextInputType.phone,
+          decoration: appInputDecoration(
+            context,
+            label: 'Phone number',
+            icon: Icons.phone_outlined,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'ASSIGN ROLE',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final role in UserRole.values)
+              ChoiceChip(
+                label: Text(role.plainLabel),
+                selected: role == _role,
+                onSelected:
+                    _working ? null : (_) => setState(() => _role = role),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Sign-in credentials are provisioned by the identity service.',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          InlineError(message: _error!),
+        ],
+        const SizedBox(height: 18),
+        FilledButton.icon(
+          onPressed: _working ? null : _create,
+          style: bigFilledStyle(),
+          icon: _working
+              ? const ButtonSpinner()
+              : const Icon(Icons.person_add_alt_1_rounded),
+          label: const Text('Add to directory'),
+        ),
+      ],
+    );
+  }
+}
+
 class _EditForm extends StatefulWidget {
   const _EditForm({required this.users, required this.person});
 
@@ -313,6 +463,21 @@ class _EditFormState extends State<_EditForm> {
       Navigator.of(context).pop();
       return;
     }
+
+    final changes = <String>[
+      if (nameChanged) 'Name: ${widget.person.name} → $name',
+      if (phoneChanged)
+        'Phone: ${widget.person.phone ?? 'Not set'} → $phone',
+      if (roleChanged)
+        'Role: ${widget.person.role.plainLabel} → ${_role.plainLabel}',
+    ];
+    final confirmed = await showConfirmSheet(
+      context,
+      title: 'Save directory changes?',
+      message: changes.join('\n'),
+      confirmLabel: 'Save changes',
+    );
+    if (!confirmed || !mounted) return;
 
     setState(() {
       _working = true;

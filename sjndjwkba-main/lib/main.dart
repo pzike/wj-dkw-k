@@ -53,6 +53,7 @@ class _DrainageAppState extends State<DrainageApp> {
           auth: _auth,
           users: _users,
           configs: _configs,
+          alerts: _alerts,
         ),
       ),
     );

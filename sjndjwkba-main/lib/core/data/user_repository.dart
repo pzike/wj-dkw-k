@@ -66,6 +66,14 @@ abstract class UserRepository {
   /// The Pending Approval queue, oldest request first.
   Future<List<AppUser>> fetchPending();
 
+  /// Create an active directory account for a person verified by the Admin.
+  /// Authentication setup is handled by the identity service.
+  Future<AppUser> create({
+    required String name,
+    required String phone,
+    required UserRole role,
+  });
+
   /// Approve a pending account. The Admin supplies the verified name,
   /// phone number, and role. Opens the first service span.
   Future<AppUser> approve({

@@ -126,7 +126,10 @@ class _PendingList extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const AppPill(label: 'Pending'),
+                  const AppPill(
+                    label: 'Role unassigned',
+                    icon: Icons.badge_outlined,
+                  ),
                   Icon(
                     Icons.chevron_right_rounded,
                     color: scheme.onSurfaceVariant,
@@ -154,7 +157,7 @@ class _ReviewForm extends StatefulWidget {
 class _ReviewFormState extends State<_ReviewForm> {
   late final TextEditingController _name;
   late final TextEditingController _phone;
-  UserRole _role = UserRole.level1;
+  UserRole? _role;
   bool _working = false;
   String? _error;
 
@@ -183,6 +186,11 @@ class _ReviewFormState extends State<_ReviewForm> {
       setState(() => _error = 'Enter a valid phone number (10 to 13 digits).');
       return;
     }
+    final role = _role;
+    if (role == null) {
+      setState(() => _error = "Select the person's role.");
+      return;
+    }
     setState(() {
       _working = true;
       _error = null;
@@ -190,7 +198,7 @@ class _ReviewFormState extends State<_ReviewForm> {
     try {
       await widget.users.approve(
         userId: widget.person.id,
-        role: _role,
+        role: role,
         verifiedName: name,
         verifiedPhone: phone,
       );
